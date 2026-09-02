@@ -5,7 +5,8 @@
  */
 export type ComponentKind =
   | 'transform'
-  | 'name';
+  | 'name'
+  | 'mesh';
 
 export interface ComponentBase<K extends ComponentKind> {
   readonly kind: K;

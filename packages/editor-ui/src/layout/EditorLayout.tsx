@@ -1,4 +1,4 @@
-import { createSignal, type JSX } from 'solid-js';
+import { createSignal, onCleanup, type JSX } from 'solid-js';
 import { Button, Splitter, colors, spacing } from '@sined/ui';
 import { AssetBrowser, Hierarchy, Inspector, Viewport } from '../features/features-index.js';
 import { useEditorServices } from '../app/editor-services.js';
@@ -7,16 +7,9 @@ const MIN_SIDE = 180;
 const MIN_BOTTOM = 120;
 
 /**
- * Top-level editor chrome. Five regions:
- *   ┌─ top bar ────────────────────────────────────────┐
- *   │  file · edit · view · plugins                   │
- *   ├─ left ──┬─ viewport ──────────────┬─ inspector ──┤
- *   │  tree   │                         │              │
- *   │  assets │                         │              │
- *   └─────────┴─────────────────────────┴──────────────┘
- *
- * Phase 0 wires static proportions; the `Splitter` callbacks update Solid
- * signals so the layout reflows as the user drags.
+ * Top-level editor chrome. The four regions wire to feature panels
+ * (Hierarchy / Viewport / Inspector / AssetBrowser) and the top bar
+ * surfaces the editor-level actions (add cube, undo/redo).
  */
 export function EditorLayout(): JSX.Element {
   const services = useEditorServices();
@@ -24,6 +17,32 @@ export function EditorLayout(): JSX.Element {
   const [leftRatio, setLeftRatio] = createSignal(0.2);
   const [rightRatio, setRightRatio] = createSignal(0.22);
   const [bottomRatio, setBottomRatio] = createSignal(0.22);
+  const [canUndo, setCanUndo] = createSignal(false);
+  const [canRedo, setCanRedo] = createSignal(false);
+  const [entityCount, setEntityCount] = createSignal(0);
+
+  const detachHistory = services.eventBus.on('history:changed', ({ canUndo, canRedo }) => {
+    setCanUndo(canUndo);
+    setCanRedo(canRedo);
+  });
+  const refreshCount = (): void => {
+    let n = 0;
+    services.scene.walk(() => {
+      n += 1;
+    });
+    setEntityCount(n);
+  };
+  const detachScene = services.eventBus.on('scene:broadcast', refreshCount);
+  onCleanup(() => {
+    detachHistory();
+    detachScene();
+  });
+  // Initial population after services are wired (next microtask).
+  queueMicrotask(() => {
+    setCanUndo(services.commandBus.history.canUndo());
+    setCanRedo(services.commandBus.history.canRedo());
+    refreshCount();
+  });
 
   return (
     <div
@@ -37,7 +56,17 @@ export function EditorLayout(): JSX.Element {
         'font-family': 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      <TopBar sceneName={services.scene.name} />
+      <TopBar
+        sceneName={services.scene.name}
+        canUndo={canUndo()}
+        canRedo={canRedo()}
+        onUndo={() => {
+          void services.commandBus.undo();
+        }}
+        onRedo={() => {
+          void services.commandBus.redo();
+        }}
+      />
 
       <div style={{ display: 'flex', flex: '1 1 auto', 'min-height': 0 }}>
         <div
@@ -78,12 +107,18 @@ export function EditorLayout(): JSX.Element {
         </div>
       </div>
 
-      <StatusBar bottomRatio={bottomRatio()} onBottomChange={setBottomRatio} />
+      <StatusBar entityCount={entityCount()} bottomRatio={bottomRatio()} onBottomChange={setBottomRatio} />
     </div>
   );
 }
 
-function TopBar(props: { sceneName: string }): JSX.Element {
+function TopBar(props: {
+  sceneName: string;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+}): JSX.Element {
   return (
     <div
       style={{
@@ -101,26 +136,33 @@ function TopBar(props: { sceneName: string }): JSX.Element {
       <span style={{ color: colors.textMuted }}>·</span>
       <span style={{ color: colors.textMuted }}>{props.sceneName}</span>
       <div style={{ flex: '1 1 auto' }} />
-      <Button size="sm" variant="ghost">
-        File
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={props.onUndo}
+        disabled={!props.canUndo}
+        title="Undo (Ctrl+Z)"
+      >
+        Undo
       </Button>
-      <Button size="sm" variant="ghost">
-        Edit
-      </Button>
-      <Button size="sm" variant="ghost">
-        View
-      </Button>
-      <Button size="sm" variant="primary">
-        Play
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={props.onRedo}
+        disabled={!props.canRedo}
+        title="Redo (Ctrl+Shift+Z)"
+      >
+        Redo
       </Button>
     </div>
   );
 }
 
-function StatusBar(props: { bottomRatio: number; onBottomChange: (r: number) => void }): JSX.Element {
-  // The status bar in Phase 0 simply renders the bottom-asset-pane ratio;
-  // Phase 1+ will surface the actual engine state (FPS, selected count,
-  // history pointer) here.
+function StatusBar(props: {
+  entityCount: number;
+  bottomRatio: number;
+  onBottomChange: (r: number) => void;
+}): JSX.Element {
   return (
     <div
       style={{
@@ -133,11 +175,14 @@ function StatusBar(props: { bottomRatio: number; onBottomChange: (r: number) => 
         'border-top': `1px solid ${colors.border}`,
         'font-size': '11px',
         color: colors.textMuted,
+        'font-family': 'ui-monospace, SFMono-Regular, Menlo, monospace',
       }}
     >
-      <span>Phase 0 skeleton</span>
+      <span>Phase 1 · core architecture online</span>
       <span>·</span>
-      <span>Bottom pane ratio: {(props.bottomRatio * 100).toFixed(0)}%</span>
+      <span>Entities: {props.entityCount}</span>
+      <span>·</span>
+      <span>Bottom pane: {(props.bottomRatio * 100).toFixed(0)}%</span>
       <div style={{ flex: '1 1 auto' }} />
       <button
         type="button"
@@ -148,6 +193,7 @@ function StatusBar(props: { bottomRatio: number; onBottomChange: (r: number) => 
           border: 'none',
           cursor: 'pointer',
           'font-size': '11px',
+          'font-family': 'inherit',
         }}
       >
         Reset bottom pane

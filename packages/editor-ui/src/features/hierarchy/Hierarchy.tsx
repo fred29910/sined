@@ -1,14 +1,28 @@
-import { For, type JSX } from 'solid-js';
-import { useEditorServices } from '../../app/editor-services.js';
+import { createSignal, For, onCleanup, type JSX } from 'solid-js';
 import { colors, spacing } from '@sined/ui';
+import { useEditorServices } from '../../app/editor-services.js';
+import { HierarchyNode, HierarchyToolbar } from './HierarchyNode.js';
 
+interface TreeSnapshot {
+  version: number;
+}
+
+/**
+ * Scene hierarchy panel. Subscribes to the editor event bus so the tree
+ * re-renders whenever a Command changes the scene (add / remove / reparent
+ * / component change).
+ */
 export function Hierarchy(): JSX.Element {
   const services = useEditorServices();
-  const roots = (): ReadonlyArray<{ id: string; name: string }> =>
-    services.scene.rootEntities.map((e) => ({
-      id: e.id.value,
-      name: e.getComponent('name')?.name ?? '(unnamed)',
-    }));
+  // A monotonic version counter; we bump it on any scene mutation so the
+  // `<For>` re-evaluates the root list. Phase 3 may swap this for a
+  // fine-grained diff.
+  const [snapshot, setSnapshot] = createSignal<TreeSnapshot>({ version: 0 });
+
+  const refresh = (): void => { setSnapshot({ version: snapshot().version + 1 }); };
+
+  const detach = services.eventBus.on('scene:broadcast', refresh);
+  onCleanup(detach);
 
   return (
     <div
@@ -16,44 +30,36 @@ export function Hierarchy(): JSX.Element {
       style={{
         width: '100%',
         height: '100%',
-        padding: `${spacing.sm}px`,
-        'box-sizing': 'border-box',
-        color: colors.text,
-        'font-size': '12px',
-        overflow: 'auto',
+        display: 'flex',
+        'flex-direction': 'column',
+        background: colors.surface,
+        'min-height': 0,
       }}
     >
+      <HierarchyToolbar />
       <div
         style={{
-          'text-transform': 'uppercase',
-          'letter-spacing': '0.05em',
-          color: colors.textMuted,
-          'font-size': '10px',
-          'margin-bottom': `${spacing.xs}px`,
+          flex: '1 1 auto',
+          padding: `${spacing.xs}px 0`,
+          'box-sizing': 'border-box',
+          color: colors.text,
+          'font-size': '12px',
+          overflow: 'auto',
         }}
       >
-        Scene Roots
-      </div>
-      <For
-        each={roots()}
-        fallback={
-          <div style={{ color: colors.textMuted, 'font-style': 'italic' }}>
-            (empty scene)
-          </div>
-        }
-      >
-        {(entity) => (
-          <div
-            style={{
-              padding: `${spacing.xs}px ${spacing.sm}px`,
-              'border-radius': '3px',
-              cursor: 'default',
-            }}
+        <div data-tree-version={snapshot().version} style={{ display: 'contents' }}>
+          <For
+            each={services.scene.rootEntities}
+            fallback={
+              <div style={{ padding: `${spacing.sm}px`, color: colors.textMuted, 'font-style': 'italic' }}>
+                (empty scene)
+              </div>
+            }
           >
-            {entity.name}
-          </div>
-        )}
-      </For>
+            {(root) => <HierarchyNode entity={root} depth={0} />}
+          </For>
+        </div>
+      </div>
     </div>
   );
 }

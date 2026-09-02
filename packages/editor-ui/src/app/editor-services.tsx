@@ -1,8 +1,22 @@
 import { createContext, useContext } from 'solid-js';
 import type { JSX } from 'solid-js';
-import type { CommandBus, PluginContext, SelectionManager } from '@sined/editor-core';
+import type { CommandBus, EditorEventBus, PluginContext, SelectionManager } from '@sined/editor-core';
 import type { Engine } from '@sined/engine';
 import type { Scene } from '@sined/domain';
+
+/**
+ * Convenience factory set exposed to UI panels. Each method returns a
+ * freshly-constructed command ready to be passed to `commandBus.execute`.
+ * Centralizing the wiring here keeps the UI free of direct scene mutation
+ * and ensures every change goes through the history stack.
+ */
+export interface CommandFactory {
+  addEntity(parentId: string | null, entity: import('@sined/domain').Entity): void;
+  removeEntity(entityId: string): void;
+  setName(entityId: string, newName: string): void;
+  setTransform(entityId: string, field: 'position' | 'rotation' | 'scale', value: { x: number; y: number; z: number; w?: number }): void;
+  reparent(entityId: string, newParentId: string | null): void;
+}
 
 /**
  * The runtime services consumed by editor panels. The shape is intentionally
@@ -15,6 +29,8 @@ export interface EditorServices {
   readonly commandBus: CommandBus;
   readonly selection: SelectionManager;
   readonly plugins: PluginContext;
+  readonly eventBus: EditorEventBus;
+  readonly commands: CommandFactory;
 }
 
 const EditorServicesContext = createContext<EditorServices | undefined>(undefined);

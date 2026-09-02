@@ -1,5 +1,7 @@
 import { Disposable, EventBus } from '@sined/shared';
 import { Clock } from './clock.js';
+import type { SceneSync } from '../sync/scene-sync.js';
+import type { SceneRenderer } from '../render/scene-renderer.js';
 
 export interface EngineEvents {
   'engine:tick': { dt: number; elapsed: number };
@@ -14,8 +16,8 @@ export interface EngineOptions {
 
 /**
  * Owns the high-level runtime: tick loop, fixed-timestep accumulator, and
- * lifecycle for the underlying renderer/workers. Concrete subsystems
- * (renderer, physics, asset pipeline) will be attached during Phase 1+.
+ * lifecycle for attached renderers/syncs. Concrete subsystems (renderer,
+ * physics, asset pipeline) are attached via the `attach*` helpers.
  */
 export class Engine implements Disposable {
   readonly events = new EventBus<EngineEvents>();
@@ -23,6 +25,8 @@ export class Engine implements Disposable {
   private rafId: number | null = null;
   private disposed = false;
   private readonly options: Required<EngineOptions>;
+  private readonly renderers: Array<SceneRenderer> = [];
+  private readonly renderDisposers: Array<() => void> = [];
 
   constructor(options: EngineOptions = {}) {
     this.options = { withRenderLoop: options.withRenderLoop ?? true };
@@ -57,9 +61,47 @@ export class Engine implements Disposable {
     this.events.emit('engine:tick', { dt, elapsed });
   }
 
+  /**
+   * Subscribe a `SceneRenderer` to the engine's tick. Each tick triggers
+   * a single `renderer.render()` call. Returns the unsubscribe function.
+   */
+  attachRenderer(renderer: SceneRenderer): () => void {
+    this.renderers.push(renderer);
+    const dispose = this.events.on('engine:tick', () => {
+      try {
+        renderer.render();
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[Engine] renderer threw on tick:', e);
+      }
+    });
+    this.renderDisposers.push(dispose);
+    return () => {
+      dispose();
+      const idx = this.renderers.indexOf(renderer);
+      if (idx >= 0) this.renderers.splice(idx, 1);
+      const didx = this.renderDisposers.indexOf(dispose);
+      if (didx >= 0) this.renderDisposers.splice(didx, 1);
+    };
+  }
+
+  /**
+   * Hook a `SceneSync` to the engine's start/stop lifecycle. On start we
+   * trigger a `refreshAll()` so the Three.js graph catches up to the
+   * current Domain state. Returns the unsubscribe function.
+   */
+  attachSync(sync: SceneSync): () => void {
+    const start = this.events.on('engine:started', () => sync.refreshAll());
+    sync.refreshAll();
+    return () => start();
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.stop();
+    for (const d of this.renderDisposers) d();
+    this.renderDisposers.length = 0;
+    this.renderers.length = 0;
     this.events.clear();
     this.disposed = true;
   }
