@@ -4,19 +4,25 @@ import { AssetBrowser, Hierarchy, Inspector, Viewport } from '../features/featur
 import { useEditorServices } from '../app/editor-services.js';
 
 const MIN_SIDE = 180;
-const MIN_BOTTOM = 120;
+const MIN_BOTTOM_PX = 120;
+const DEFAULT_BOTTOM_PX = 200;
 
 /**
  * Top-level editor chrome. The four regions wire to feature panels
  * (Hierarchy / Viewport / Inspector / AssetBrowser) and the top bar
- * surfaces the editor-level actions (add cube, undo/redo).
+ * surfaces the editor-level actions (undo/redo).
+ *
+ * The two side splitters control panel *ratios* of the horizontal row
+ * (leftRatio, rightRatio). The vertical splitter inside the left column
+ * controls the *pixel* height of the AssetBrowser; the Hierarchy above
+ * it takes the remaining space via `flex: 1 1 auto`.
  */
 export function EditorLayout(): JSX.Element {
   const services = useEditorServices();
 
   const [leftRatio, setLeftRatio] = createSignal(0.2);
   const [rightRatio, setRightRatio] = createSignal(0.22);
-  const [bottomRatio, setBottomRatio] = createSignal(0.22);
+  const [bottomPx, setBottomPx] = createSignal(DEFAULT_BOTTOM_PX);
   const [canUndo, setCanUndo] = createSignal(false);
   const [canRedo, setCanRedo] = createSignal(false);
   const [entityCount, setEntityCount] = createSignal(0);
@@ -37,12 +43,17 @@ export function EditorLayout(): JSX.Element {
     detachHistory();
     detachScene();
   });
-  // Initial population after services are wired (next microtask).
   queueMicrotask(() => {
     setCanUndo(services.commandBus.history.canUndo());
     setCanRedo(services.commandBus.history.canRedo());
     refreshCount();
   });
+
+  // Refs for the pixel-mode splitters. They read the controlled panel's
+  // own bounding box, so the math is independent of where the panel sits
+  // in the flex layout.
+  let assetRef: HTMLDivElement | undefined;
+  let leftColumnRef: HTMLDivElement | undefined;
 
   return (
     <div
@@ -70,6 +81,7 @@ export function EditorLayout(): JSX.Element {
 
       <div style={{ display: 'flex', flex: '1 1 auto', 'min-height': 0 }}>
         <div
+          ref={leftColumnRef}
           style={{
             width: `${leftRatio() * 100}%`,
             'min-width': `${MIN_SIDE}px`,
@@ -77,23 +89,51 @@ export function EditorLayout(): JSX.Element {
             'flex-direction': 'column',
             background: colors.surface,
             'border-right': `1px solid ${colors.border}`,
+            'min-height': 0,
           }}
         >
-          <div style={{ flex: '1 1 60%', 'min-height': 0, 'border-bottom': `1px solid ${colors.border}` }}>
+          <div
+            style={{
+              flex: '1 1 auto',
+              'min-height': 0,
+              'border-bottom': `1px solid ${colors.border}`,
+            }}
+          >
             <Hierarchy />
           </div>
-          <div style={{ flex: `0 0 ${bottomRatio() * 100}%`, 'min-height': `${MIN_BOTTOM}px` }}>
+          <Splitter
+            orientation="horizontal"
+            align="end"
+            targetRef={assetRef ?? null}
+            onChangePx={setBottomPx}
+          />
+          <div
+            ref={assetRef}
+            style={{
+              flex: `0 0 ${Math.max(MIN_BOTTOM_PX, bottomPx())}px`,
+              'min-height': `${MIN_BOTTOM_PX}px`,
+            }}
+          >
             <AssetBrowser />
           </div>
         </div>
 
-        <Splitter orientation="vertical" initialRatio={leftRatio()} onChange={setLeftRatio} />
+        <Splitter
+          orientation="vertical"
+          initialRatio={leftRatio()}
+          onChange={setLeftRatio}
+        />
 
-        <div style={{ flex: '1 1 auto', display: 'flex', 'min-width': 0 }}>
+        <div style={{ flex: '1 1 auto', display: 'flex', 'min-width': 0, 'min-height': 0 }}>
           <Viewport />
         </div>
 
-        <Splitter orientation="vertical" initialRatio={rightRatio()} onChange={setRightRatio} />
+        <Splitter
+          orientation="vertical"
+          initialRatio={rightRatio()}
+          align="end"
+          onChange={setRightRatio}
+        />
 
         <div
           style={{
@@ -107,7 +147,11 @@ export function EditorLayout(): JSX.Element {
         </div>
       </div>
 
-      <StatusBar entityCount={entityCount()} bottomRatio={bottomRatio()} onBottomChange={setBottomRatio} />
+      <StatusBar
+        entityCount={entityCount()}
+        bottomPx={bottomPx()}
+        onResetBottom={() => setBottomPx(DEFAULT_BOTTOM_PX)}
+      />
     </div>
   );
 }
@@ -160,8 +204,8 @@ function TopBar(props: {
 
 function StatusBar(props: {
   entityCount: number;
-  bottomRatio: number;
-  onBottomChange: (r: number) => void;
+  bottomPx: number;
+  onResetBottom: () => void;
 }): JSX.Element {
   return (
     <div
@@ -182,11 +226,11 @@ function StatusBar(props: {
       <span>·</span>
       <span>Entities: {props.entityCount}</span>
       <span>·</span>
-      <span>Bottom pane: {(props.bottomRatio * 100).toFixed(0)}%</span>
+      <span>Asset browser: {Math.round(props.bottomPx)}px</span>
       <div style={{ flex: '1 1 auto' }} />
       <button
         type="button"
-        onClick={() => props.onBottomChange(0.3)}
+        onClick={props.onResetBottom}
         style={{
           background: 'transparent',
           color: colors.textMuted,

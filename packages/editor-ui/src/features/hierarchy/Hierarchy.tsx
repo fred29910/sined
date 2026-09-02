@@ -30,10 +30,11 @@ export function Hierarchy(): JSX.Element {
       style={{
         width: '100%',
         height: '100%',
+        'min-height': 0,
         display: 'flex',
         'flex-direction': 'column',
         background: colors.surface,
-        'min-height': 0,
+        'box-sizing': 'border-box',
       }}
     >
       <HierarchyToolbar />

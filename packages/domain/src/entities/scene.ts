@@ -1,6 +1,9 @@
 import { Uid } from '../value-objects/uid.js';
 import { Entity } from './entity.js';
 import type { SceneEvent, SceneListener } from '../events/scene-events.js';
+import { getLogger } from '@sined/shared';
+
+const log = getLogger('@sined/domain/scene');
 
 export class Scene {
   readonly id: Uid;
@@ -74,8 +77,7 @@ export class Scene {
         listener(event);
       } catch (e) {
         // Listener failures must not interrupt sibling subscribers.
-        // eslint-disable-next-line no-console
-        console.error(`[Scene] listener threw on ${event.kind}:`, e);
+        log.error('listener threw on %s:', event.kind, e);
       }
     }
   }

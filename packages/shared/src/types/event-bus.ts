@@ -4,6 +4,8 @@
  * it can be reused by Domain, Engine, Editor Core, and Worker code without
  * dragging in a UI framework.
  */
+import { getLogger } from '../logging/index.js';
+
 // `EventMap` is intentionally a permissive constraint: any object whose
 // property values can serve as listener payloads (typically interfaces with
 // named event keys) qualifies. This lets each module describe its own
@@ -11,6 +13,8 @@
 export type EventMap = object;
 export type Listener<T> = (payload: T) => void;
 export type Unsubscribe = () => void;
+
+const log = getLogger('@sined/shared/event-bus');
 
 export class EventBus<E extends EventMap = object> {
   private readonly listeners: Map<keyof E, Set<Listener<unknown>>> = new Map();
@@ -41,8 +45,7 @@ export class EventBus<E extends EventMap = object> {
         (listener as Listener<E[K]>)(payload);
       } catch (e) {
         // A listener throwing must never break sibling subscribers.
-        // eslint-disable-next-line no-console
-        console.error(`[EventBus] listener for ${String(event)} threw:`, e);
+        log.error('listener for %s threw:', String(event), e);
       }
     }
   }

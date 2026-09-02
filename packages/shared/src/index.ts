@@ -13,3 +13,5 @@ export * from './types/disposable.js';
 export * from './types/event-bus.js';
 
 export * from './constants/engine.js';
+
+export * from './logging/index.js';

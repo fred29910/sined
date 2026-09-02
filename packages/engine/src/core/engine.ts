@@ -1,7 +1,9 @@
-import { Disposable, EventBus } from '@sined/shared';
+import { Disposable, EventBus, getLogger } from '@sined/shared';
 import { Clock } from './clock.js';
 import type { SceneSync } from '../sync/scene-sync.js';
 import type { SceneRenderer } from '../render/scene-renderer.js';
+
+const log = getLogger('@sined/engine');
 
 export interface EngineEvents {
   'engine:tick': { dt: number; elapsed: number };
@@ -71,8 +73,7 @@ export class Engine implements Disposable {
       try {
         renderer.render();
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('[Engine] renderer threw on tick:', e);
+        log.error('renderer threw on tick:', e);
       }
     });
     this.renderDisposers.push(dispose);
