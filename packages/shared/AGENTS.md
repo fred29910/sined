@@ -11,8 +11,7 @@ Pure TypeScript utilities, math, event bus, logging; framework-independent; zero
 ```
 packages/shared/src/
 ├── index.ts                     # Flat re-export boundary (named symbols only)
-├── utils/                        # id, result, assert
-│   └── index.ts
+├── utils/                        # id, result, assert (no sub-index; flat barrel)
 ├── math/                         # vec3, quaternion
 ├── types/                        # disposable, event-bus
 ├── constants/                    # engine constants
@@ -23,8 +22,8 @@ packages/shared/src/
 
 | Task | Location | Notes |
 |---|---|---|
-| Math / vector ops | `math/vec3.js`, `math/quaternion.js` | No external math lib |
-| Result / error types | `utils/result.js` | `never` type is legitimate — design constraint |
+| Math / vector ops | `math/vec3.ts`, `math/quaternion.ts` | No external math lib |
+| Result / error types | `utils/result.ts` | `never` type is legitimate — design constraint |
 | Event bus | `types/event-bus.ts` | Cross-package event bus |
 | Shared constants | `constants/engine.ts` | Engine-wide constants |
 | Logging | `logging/index.ts` | Internal mostly; cross-package use limited |

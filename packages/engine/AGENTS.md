@@ -43,5 +43,5 @@ packages/engine/src/
 ## NOTES
 
 - Zero tests; verify with `scripts/smoke.mjs` (headless, no Three.js required) + manual check.
-- Largest file is only ~300 lines (none exceed `editor-core`'s 353-line hotspot).
+- Largest file is `sync/scene-sync.ts` (266 lines); no file exceeds `editor-core`'s 353-line `scene-commands.ts` hotspot.
 - `three` package referenced at 3 refs (low centrality relative to shared/domain).

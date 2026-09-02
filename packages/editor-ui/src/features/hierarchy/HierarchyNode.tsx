@@ -1,5 +1,5 @@
 import { createMemo, createSignal, For, Show, type JSX } from 'solid-js';
-import { Button, colors, spacing } from '@sined/ui';
+import { Button, colors, IconButton, spacing } from '@sined/ui';
 import { useEditorServices } from '../../app/editor-services.js';
 import { createCubeMesh, Entity, Uid, type Entity as EntityType } from '@sined/domain';
 
@@ -44,51 +44,44 @@ export function HierarchyNode(props: HierarchyNodeProps): JSX.Element {
           color: colors.text,
         }}
       >
-        <button
-          type="button"
-          aria-label={expanded() ? 'Collapse' : 'Expand'}
+        <span
           onClick={(event) => {
             event.stopPropagation();
             setExpanded(!expanded());
           }}
           style={{
-            width: '14px',
-            height: '14px',
             display: 'inline-flex',
             'align-items': 'center',
             'justify-content': 'center',
-            background: 'transparent',
+            width: '14px',
+            height: '14px',
             color: colors.textMuted,
-            border: 'none',
-            cursor: 'pointer',
             'font-size': '10px',
-            padding: 0,
+            cursor: 'pointer',
+            'user-select': 'none',
             visibility: hasChildren() ? 'visible' : 'hidden',
           }}
+          role="button"
+          aria-label={expanded() ? 'Collapse' : 'Expand'}
+          tabIndex={hasChildren() ? 0 : -1}
         >
           {expanded() ? '▾' : '▸'}
-        </button>
+        </span>
         <span style={{ flex: '1 1 auto', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
           {name()}
         </span>
-        <span
+        <IconButton
+          size="sm"
+          variant="ghost"
+          aria-label="Delete entity"
+          title="Delete entity"
           onClick={(event) => {
             event.stopPropagation();
             services.commands.removeEntity(props.entity.id.value);
           }}
-          style={{
-            color: colors.textMuted,
-            'font-size': '14px',
-            padding: '0 4px',
-            cursor: 'pointer',
-            'line-height': 1,
-          }}
-          role="button"
-          aria-label="Delete entity"
-          title="Delete entity"
         >
           ×
-        </span>
+        </IconButton>
       </div>
       <Show when={expanded() && hasChildren()}>
         <For each={childEntities()}>

@@ -12,5 +12,7 @@
     "build": "echo 'shared is source-only; consumed via Vite/tsc'",
     "typecheck": "tsc -b"
   },
-  "dependencies": {}
+  "dependencies": {
+    "loglevel": "^1.9.2"
+  }
 }

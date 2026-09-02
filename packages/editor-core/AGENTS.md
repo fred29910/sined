@@ -12,9 +12,10 @@ CommandBus, Undo/Redo, Selection, Plugin engine. Largest source file in workspac
 packages/editor-core/src/
 ├── index.ts                     # Package export
 ├── commands/                    # Hotspot
-│   ├── scene-commands.ts        # 353 lines — command definitions
-│   ├── command.d.ts             # Type definitions
-│   └── history-stack.d.ts
+│   ├── scene-commands.ts        # 353 lignes — définitions de commandes
+│   ├── command.ts               # Types de commandes
+│   ├── command-bus.ts           # Bus de commandes
+│   └── history-stack.ts         # Pile d'historique (Undo/Redo)
 └── ...                          # Undo, selection, plugin internals
 ```
 
@@ -23,7 +24,7 @@ packages/editor-core/src/
 | Task | Location | Notes |
 |---|---|---|
 | Add new command | `commands/` | Mirror `scene-commands.ts` pattern; 353-line file is reference |
-| Undo / redo | `commands/history-stack.d.ts` | Stack-based; verify with `scripts/smoke.mjs` |
+| Undo / redo | `commands/history-stack.ts` | Stack-based; verify with `scripts/smoke.mjs` |
 | Selection | source root | Tied to editor-core; not in engine |
 | Plugin | source root | Plugin engine lives here |
 

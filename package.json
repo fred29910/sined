@@ -13,9 +13,11 @@
     "typecheck": "tsc -b",
     "clean": "rm -rf packages/*/dist apps/*/dist"
   },
+  "dependencies": {
+    "loglevel": "^1.9.2"
+  },
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "loglevel": "^1.9.2",
     "typescript": "~7.0.2"
   }
 }

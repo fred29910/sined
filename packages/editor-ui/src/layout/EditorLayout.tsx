@@ -222,26 +222,15 @@ function StatusBar(props: {
         'font-family': 'ui-monospace, SFMono-Regular, Menlo, monospace',
       }}
     >
-      <span>Phase 1 · core architecture online</span>
+      <span>Phase 2 · UI design system online</span>
       <span>·</span>
       <span>Entities: {props.entityCount}</span>
       <span>·</span>
       <span>Asset browser: {Math.round(props.bottomPx)}px</span>
       <div style={{ flex: '1 1 auto' }} />
-      <button
-        type="button"
-        onClick={props.onResetBottom}
-        style={{
-          background: 'transparent',
-          color: colors.textMuted,
-          border: 'none',
-          cursor: 'pointer',
-          'font-size': '11px',
-          'font-family': 'inherit',
-        }}
-      >
+      <Button size="sm" variant="ghost" onClick={props.onResetBottom}>
         Reset bottom pane
-      </button>
+      </Button>
     </div>
   );
 }

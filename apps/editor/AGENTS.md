@@ -9,19 +9,25 @@ Top-level Vite + Solid application. Assembles `editor-ui`, `ui`, `engine`, `shar
 ## STRUCTURE
 
 ```
-apps/editor/src/
-├── App.tsx                      # Entry assembly
-├── index.tsx                    # Mount
-└── styles.css
+apps/editor/
+├── src/
+│   ├── App.tsx                      # Entry assembly
+│   ├── index.tsx                    # Mount
+│   └── styles.css
+├── scripts/
+│   ├── smoke.ts                     # Headless Phase 1 smoke (CommandBus / Undo / Redo)
+│   ├── splitter-math-test.ts        # Headless Splitter drag math regression
+│   └── atomics-test.ts             # Phase 2 atomic / token validation
 ```
 
 ## WHERE TO LOOK
 
 | Task | Location | Notes |
 |---|---|---|
-| App assembly / routing | `App.tsx` | Imports chrome + engine via workspace links |
-| Entry / bootstrap | `index.tsx` | Solid mount point |
+| App assembly / routing | `src/App.tsx` | Imports chrome + engine via workspace links |
+| Entry / bootstrap | `src/index.tsx` | Solid mount point |
 | Build / dev config | `vite.config.ts` (un-ignored) | Port ~5273 |
+| Headless validation | `scripts/` | Phase 1 smoke + Phase 2 atomics test |
 
 ## CONVENTIONS
 
@@ -36,5 +42,7 @@ apps/editor/src/
 
 ## NOTES
 
-- `dist/` (36 items) is build output; ignored by `.gitignore` except un-ignored assets.
-- `public/` holds static assets; copied to `dist/` by Vite.
+- `dist/` is build output (assets/, index.html, favicon.svg, icons.svg — ~7 items); ignored by `.gitignore` except un-ignored assets.
+- `public/` (repo root) holds static assets; copied to `dist/` by Vite.
+- `scripts/atomics-test.ts` (Phase 2) is the CI guard for the design system: token shape, component barrel wiring, and Tabs keyboard math. Run with `bun apps/editor/scripts/atomics-test.ts` from the workspace root.
+- The `tsconfig.json` `include` covers `src` + `scripts` so the test scripts participate in `bun run typecheck`.

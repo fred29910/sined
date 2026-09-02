@@ -1,7 +1,6 @@
 import { createMemo, createSignal, For, onCleanup, Show, type JSX } from 'solid-js';
-import { colors, spacing } from '@sined/ui';
+import { colors, NumberInput, spacing, TextInput } from '@sined/ui';
 import { useEditorServices } from '../../app/editor-services.js';
-import { NumberInput, TextInput } from '../../components/inputs.js';
 import type { Entity } from '@sined/domain';
 
 const FIELDS = ['x', 'y', 'z'] as const;

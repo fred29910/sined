@@ -34,9 +34,9 @@ for finer granularity. Stable names are important — they are how developers
 target a specific module at runtime:
 
 ```ts
-// In the browser DevTools console:
-log.getLogger('@sined/engine').setLevel('debug');
-log.getLogger('@sined/domain/scene').setLevel('trace');
+// In the browser DevTools console (after importing from `@sined/shared`):
+getLogger('@sined/engine').setLevel('debug');
+getLogger('@sined/domain/scene').setLevel('trace');
 ```
 
 ## Configuring the default level

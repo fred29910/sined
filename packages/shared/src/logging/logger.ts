@@ -1,8 +1,8 @@
 // Thin wrapper over the `loglevel` package. Every package in the monorepo
 // obtains a *named* logger through `getLogger('@sined/<package>/<module>')` so
 // that developers can enable / disable logging for a specific module from the
-// browser console (e.g. `log.getLogger('@sined/engine').setLevel('debug')`)
-// without recompiling.
+// browser console (e.g. import `getLogger` from `@sined/shared` then call
+// `.setLevel('debug')` at runtime), without recompiling.
 //
 // `loglevel` is the smallest viable option (≈1.4 KB gzipped, zero deps) and
 // deliberately keeps the original call site visible in stack traces — useful
