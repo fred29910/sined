@@ -1,28 +1,45 @@
-## Usage
+# Sined
 
-```bash
-$ npm install # or pnpm install or yarn install
+A modular 3D editor / engine workspace built around Solid + TypeScript + Three.js. The
+architecture follows the layout in [`docs/sturct.md`](docs/sturct.md):
+
+```
+apps/editor                  Vite + Solid top-level application
+packages/shared              Pure-TS utilities, math, event bus
+packages/domain              Framework-independent entities + rules
+packages/engine              Three.js render loop, asset pipeline, world
+packages/editor-core         CommandBus, Undo/Redo, Selection, Plugin system
+packages/ui                  Solid atomics (Button, Splitter, tokens)
+packages/editor-ui           Editor chrome: Hierarchy / Viewport / Inspector
 ```
 
-### Learn more on the [Solid Website](https://solidjs.com) and come chat with us on our [Discord](https://discord.com/invite/solidjs)
+Dependency direction (strict, one-way):
 
-## Available Scripts
+```
+apps/editor → editor-ui → editor-core → engine → domain → shared
+                          ui ──────────────► shared
+```
 
-In the project directory, you can run:
+## Getting started
 
-### `npm run dev`
+```bash
+bun install
+bun run dev         # starts the editor at http://localhost:5173
+```
 
-Runs the app in the development mode.<br>
-Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
+Other workspace scripts:
 
-### `npm run build`
+```bash
+bun run typecheck   # tsc -b across every package
+bun run build       # production build of every package that ships a build step
+```
 
-Builds the app for production to the `dist` folder.<br>
-It correctly bundles Solid in production mode and optimizes the build for the best performance.
+> Currently running Phase 0 (Infrastructure & Monorepo). The skeleton renders
+> the editor chrome with placeholders for the Viewport, Hierarchy, Inspector
+> and Asset Browser. Subsequent phases fill in the engine, commands, and
+> editor features.
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+## Learn more
 
-## Deployment
-
-Learn more about deploying your application with the [documentations](https://vite.dev/guide/static-deploy.html)
+- [Solid Website](https://solidjs.com) · [Solid Discord](https://discord.com/invite/solidjs)
+- [Vite docs](https://vite.dev)

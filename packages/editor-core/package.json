@@ -1,0 +1,20 @@
+{
+  "name": "@sined/editor-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "echo 'editor-core is source-only; consumed via Vite/tsc'",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@sined/domain": "workspace:*",
+    "@sined/engine": "workspace:*",
+    "@sined/shared": "workspace:*"
+  }
+}

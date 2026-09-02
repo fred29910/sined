@@ -1,0 +1,4 @@
+# Per-app build output. The repo-level .gitignore already excludes `dist/`
+# at the root, but we keep this file in case apps need additional rules later.
+node_modules/
+dist/

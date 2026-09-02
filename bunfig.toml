@@ -1,0 +1,8 @@
+# bun workspace configuration for the sined monorepo.
+# `bun install` at the root will resolve all `apps/*` and `packages/*` and
+# symlink workspace dependencies automatically.
+[install]
+exact = false
+auto = "auto"
+
+[install.scopes]
