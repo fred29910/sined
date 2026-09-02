@@ -1,7 +1,24 @@
-import { createSignal, onCleanup, type JSX } from 'solid-js';
+import { createSignal, onCleanup, lazy, Suspense, type JSX, type Component } from 'solid-js';
 import { Button, Splitter, colors, spacing } from '@sined/ui';
-import { AssetBrowser, Hierarchy, Inspector, Viewport } from '../features/features-index.js';
 import { useEditorServices } from '../app/editor-services.js';
+
+// Lazy-loaded feature panels to split the build chunk (<500kB) per Phase 7.
+const HierarchyLazy = lazy(async () => {
+  const mod = await import('../features/features-index.js');
+  return { default: (mod.Hierarchy as unknown) as Component<any> };
+});
+const ViewportLazy = lazy(async () => {
+  const mod = await import('../features/features-index.js');
+  return { default: (mod.Viewport as unknown) as Component<any> };
+});
+const InspectorLazy = lazy(async () => {
+  const mod = await import('../features/features-index.js');
+  return { default: (mod.Inspector as unknown) as Component<any> };
+});
+const AssetBrowserLazy = lazy(async () => {
+  const mod = await import('../features/features-index.js');
+  return { default: (mod.AssetBrowser as unknown) as Component<any> };
+});
 
 const MIN_SIDE = 180;
 const MIN_BOTTOM_PX = 120;
@@ -17,6 +34,10 @@ const DEFAULT_BOTTOM_PX = 200;
  * controls the *pixel* height of the AssetBrowser; the Hierarchy above
  * it takes the remaining space via `flex: 1 1 auto`.
  */
+function Fallback(): JSX.Element {
+  return <div style={{ padding: '12px', color: colors.textMuted }}>Loading...</div>;
+}
+
 export function EditorLayout(): JSX.Element {
   const services = useEditorServices();
 
@@ -99,7 +120,9 @@ export function EditorLayout(): JSX.Element {
               'border-bottom': `1px solid ${colors.border}`,
             }}
           >
-            <Hierarchy />
+          <Suspense fallback={<Fallback />}>
+            <HierarchyLazy />
+          </Suspense>
           </div>
           <Splitter
             orientation="horizontal"
@@ -114,7 +137,9 @@ export function EditorLayout(): JSX.Element {
               'min-height': `${MIN_BOTTOM_PX}px`,
             }}
           >
-            <AssetBrowser />
+            <Suspense fallback={<Fallback />}>
+              <AssetBrowserLazy />
+            </Suspense>
           </div>
         </div>
 
@@ -125,7 +150,9 @@ export function EditorLayout(): JSX.Element {
         />
 
         <div style={{ flex: '1 1 auto', display: 'flex', 'min-width': 0, 'min-height': 0 }}>
-          <Viewport />
+          <Suspense fallback={<Fallback />}>
+            <ViewportLazy />
+          </Suspense>
         </div>
 
         <Splitter
@@ -143,7 +170,9 @@ export function EditorLayout(): JSX.Element {
             'border-left': `1px solid ${colors.border}`,
           }}
         >
-          <Inspector />
+          <Suspense fallback={<Fallback />}>
+            <InspectorLazy />
+          </Suspense>
         </div>
       </div>
 
